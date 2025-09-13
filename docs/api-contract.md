@@ -90,7 +90,156 @@ No parameters required.
 
 ---
 
-### 2. Intelligent Location Search
+### 2. OpenWebUI Model Query
+
+**POST** `/api/openwebui/query`
+
+**Business Purpose**: Direct AI model interaction for natural language processing and content generation.
+
+**Business Case**: Enables direct communication with the OpenWebUI instance running gemma3:1b model. This endpoint provides AI-powered text generation, question answering, and natural language understanding capabilities.
+
+**Business Value**:
+
+- Direct access to AI model for custom queries
+- Foundation for intelligent location processing pipeline
+- Supports conversational AI interactions
+- Enables testing and development of AI features
+
+#### Request Headers
+
+```http
+Content-Type: application/json
+```
+
+#### Request Body
+
+```json
+{
+  "prompt": "What is artificial intelligence?",
+  "model": "gemma3:1b",
+  "max_tokens": 500,
+  "temperature": 0.7
+}
+```
+
+#### Parameters
+
+| Parameter     | Type   | Required | Description                                 |
+| ------------- | ------ | -------- | ------------------------------------------- |
+| `prompt`      | string | Yes      | The text prompt to send to the AI model     |
+| `model`       | string | No       | Model name (default: "gemma3:1b")           |
+| `max_tokens`  | number | No       | Maximum tokens in response (default: 500)   |
+| `temperature` | number | No       | Response creativity (0.0-1.0, default: 0.7) |
+
+#### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "prompt": "What is artificial intelligence?",
+    "response": "Artificial intelligence (AI) refers to the simulation of human intelligence in machines that are programmed to think and learn like humans...",
+    "model": "gemma3:1b",
+    "usage": {
+      "prompt_tokens": 6,
+      "completion_tokens": 145,
+      "total_tokens": 151
+    },
+    "metadata": {
+      "prompt_tokens": 6,
+      "completion_tokens": 145,
+      "total_tokens": 151,
+      "processing_time": "1.2s",
+      "request_id": "req_1694606400_abc123def",
+      "processing_timestamp": "2025-09-13T10:30:00Z"
+    }
+  },
+  "message": "Query processed successfully",
+  "timestamp": "2025-09-13T10:30:00Z"
+}
+```
+
+#### Status Codes
+
+- `200` - Query successful
+- `400` - Invalid request parameters
+- `401` - Authentication failed
+- `503` - OpenWebUI service unavailable
+- `500` - Internal server error
+
+---
+
+### 3. Get Available OpenWebUI Models
+
+**GET** `/api/openwebui/models`
+
+**Business Purpose**: List all available AI models in the OpenWebUI instance.
+
+**Business Case**: Allows applications to discover what models are available for querying, enabling dynamic model selection and capabilities checking.
+
+#### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "models": [
+      {
+        "id": "gemma3:1b",
+        "name": "gemma3:1b",
+        "object": "model",
+        "created": 1694606400
+      }
+    ],
+    "total_count": 1,
+    "default_model": "gemma3:1b"
+  },
+  "message": "Models retrieved successfully",
+  "timestamp": "2025-09-13T10:30:00Z"
+}
+```
+
+#### Status Codes
+
+- `200` - Models retrieved successfully
+- `500` - Internal server error
+
+---
+
+### 4. OpenWebUI Health Check
+
+**GET** `/api/openwebui/health`
+
+**Business Purpose**: Monitor OpenWebUI service connectivity and operational status.
+
+**Business Case**: Ensures OpenWebUI service is available before sending model queries, providing system reliability monitoring.
+
+#### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "service": "OpenWebUI",
+    "status": "healthy",
+    "version": "1.0.0",
+    "uptime": 3600,
+    "api_url": "http://localhost:8080",
+    "default_model": "gemma3:1b"
+  },
+  "message": "OpenWebUI is healthy",
+  "timestamp": "2025-09-13T10:30:00Z"
+}
+```
+
+#### Status Codes
+
+- `200` - OpenWebUI is healthy
+- `503` - OpenWebUI service unavailable
+
+---
+
+### 5. Intelligent Location Search
 
 **POST** `/api/search`
 
@@ -187,7 +336,7 @@ Content-Type: application/json
 
 ---
 
-### 3. Location Detail Enrichment
+### 6. Location Detail Enrichment
 
 **GET** `/api/locations/{place_id}`
 
@@ -282,7 +431,7 @@ Content-Type: application/json
 
 ---
 
-### 4. Proximity-Based Discovery
+### 7. Proximity-Based Discovery
 
 **GET** `/api/nearby`
 
@@ -377,22 +526,34 @@ GET /api/nearby?lat=-6.2088&lng=106.8456&radius=2000&type=restaurant&keyword=ram
 
 ### Primary Use Cases
 
-1. **Conversational Location Discovery**
+1. **Direct AI Model Interaction**
+
+   - User: Sends custom prompts to AI model
+   - System: Processes with gemma3:1b and returns AI-generated responses
+   - Use Case: Testing AI capabilities, content generation, Q&A
+
+2. **AI Model Management**
+
+   - User: Checks available models and service health
+   - System: Returns model list and connectivity status
+   - Use Case: Model discovery, service monitoring, debugging
+
+3. **Conversational Location Discovery**
 
    - User: "Find good coffee shops near the university"
    - System: Interprets context, finds relevant locations, returns structured results
 
-2. **Intent-Based Search**
+4. **Intent-Based Search**
 
    - User: "Where can I get late night food?"
    - System: Considers time context, finds 24-hour or late-closing restaurants
 
-3. **Area Exploration**
+5. **Area Exploration**
 
    - User: "What's interesting around Bandung city center?"
    - System: Provides diverse location types for area exploration
 
-4. **Specific Business Discovery**
+6. **Specific Business Discovery**
    - User: "Ramen restaurant with good reviews near Turangga"
    - System: Filters by cuisine type, ratings, and location proximity
 

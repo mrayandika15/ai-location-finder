@@ -62,14 +62,13 @@ export interface SearchFilters {
   radius?: number;
 }
 
-// Context Types
-export interface AppContextType {
-  searchResults: LocationResult[];
-  setSearchResults: (results: LocationResult[]) => void;
-  isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
-  mapViewport: MapViewport;
-  setMapViewport: (viewport: MapViewport) => void;
-  selectedLocation: LocationResult | null;
-  setSelectedLocation: (location: LocationResult | null) => void;
+// Chat Types
+export interface ChatMessage {
+  id: string;
+  type: "user" | "ai" | "system";
+  content: string;
+  timestamp: Date;
+  locations?: LocationResult[];
 }
+
+// Store Types (Zustand store interface is defined in store/useAppStore.ts)

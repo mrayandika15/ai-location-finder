@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 // Import routes
-const healthRoutes = require("./api-gateway/routes/health");
+const { healthRoutes, openwebuiRoutes } = require("./routes");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -30,6 +30,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use("/api/health", healthRoutes);
+app.use("/api/openwebui", openwebuiRoutes);
 
 // Root endpoint
 app.get("/", (req, res) => {
