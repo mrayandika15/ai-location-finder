@@ -12,30 +12,54 @@ The AI Location Finder is a modern web application that transforms natural langu
 
 The system follows a microservices architecture with clear separation of concerns:
 
+### Project Structure
+
+```
+ai-location-finder/
+├── ui/                     # Frontend application
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── ...
+├── service/                # Backend services
+│   ├── api-gateway/
+│   ├── openwebui-integration/
+│   ├── package.json
+│   └── ...
+├── docs/
+│   ├── architecture-diagram.png
+│   └── api-contract.md
+└── README.md
+```
+
 ### Components
 
-1. **Frontend (User Interface)**
+1. **Frontend (UI Folder)**
 
+   - **Location**: `./ui/`
    - React-based web application
    - Interactive Google Maps integration
    - Real-time location display
    - User-friendly query interface
 
-2. **API Gateway**
+2. **Backend Services (Service Folder)**
 
-   - Central request orchestration
+   - **Location**: `./service/`
+   - API Gateway for request orchestration
    - Route management and load balancing
    - Request/response transformation
    - Authentication and authorization layer
 
-3. **OpenWebUI (LLM Interface)**
+3. **OpenWebUI Integration**
 
+   - **Location**: `./service/openwebui-integration/`
    - Large Language Model integration
    - Natural language processing
    - Query interpretation and context understanding
    - Structured location data generation
 
 4. **Google Maps API Integration**
+   - **Location**: `./service/api-gateway/`
    - Real-time location data
    - Geocoding and reverse geocoding
    - Place details and reviews
@@ -72,18 +96,22 @@ The system follows a microservices architecture with clear separation of concern
 
 ## 🛠️ Technology Stack
 
-### Frontend
+### Frontend (`./ui/`)
 
 - **React.js** - Modern UI framework
 - **Google Maps JavaScript API** - Interactive maps
 - **CSS3/SCSS** - Styling and responsive design
 - **Axios** - HTTP client for API communication
+- **Vite/Create React App** - Build tooling
+- **TypeScript** - Type safety (optional)
 
-### Backend
+### Backend (`./service/`)
 
 - **Node.js/Express** - API Gateway server
 - **RESTful APIs** - Service communication
 - **JSON** - Data exchange format
+- **Cors** - Cross-origin resource sharing
+- **Dotenv** - Environment variable management
 
 ### AI/ML
 
@@ -124,30 +152,54 @@ git clone https://github.com/yourusername/ai-location-finder.git
 cd ai-location-finder
 ```
 
-2. Install dependencies:
+2. Install Frontend Dependencies:
 
 ```bash
+cd ui
 npm install
 ```
 
-3. Set up environment variables:
+3. Install Backend Dependencies:
 
 ```bash
-cp .env.example .env
-# Edit .env with your API keys and configuration
+cd ../service
+npm install
 ```
 
-4. Start the development server:
+4. Set up environment variables:
 
 ```bash
+# In the service directory
+cp .env.example .env
+# Edit .env with your API keys and configuration
+
+# In the ui directory (if needed)
+cd ../ui
+cp .env.example .env
+# Edit .env with frontend-specific configuration
+```
+
+5. Start the Backend Server:
+
+```bash
+cd ../service
 npm run dev
 ```
 
-5. Open your browser and navigate to `http://localhost:3000`
+6. Start the Frontend Development Server (in a new terminal):
+
+```bash
+cd ui
+npm start
+```
+
+7. Open your browser and navigate to `http://localhost:3000` (frontend) and `http://localhost:8000` (backend API)
 
 ## 📝 Configuration
 
 ### Environment Variables
+
+#### Backend Configuration (`./service/.env`)
 
 ```env
 # Google Maps Configuration
@@ -159,42 +211,41 @@ OPENWEBUI_API_URL=your_openwebui_endpoint
 OPENWEBUI_API_KEY=your_openwebui_api_key
 
 # Server Configuration
-PORT=3000
+PORT=8000
 NODE_ENV=development
+
+# CORS Configuration
+FRONTEND_URL=http://localhost:3000
 ```
 
-## 🔧 API Endpoints
+#### Frontend Configuration (`./ui/.env`) - Optional
 
-### Core Endpoints
+```env
+# Backend API URL
+REACT_APP_API_URL=http://localhost:8000
 
-- `POST /api/search` - Process natural language location queries
-- `GET /api/locations/:id` - Get detailed location information
-- `GET /api/nearby` - Find nearby places based on coordinates
-- `GET /api/health` - System health check
+# Google Maps API Key (if used in frontend)
+REACT_APP_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+```
 
-## 🤝 Contributing
+## 🔧 API Documentation
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+For detailed API documentation including request/response formats, authentication, and examples, see:
 
-## 📄 License
+📋 **[Complete API Contract Documentation](./docs/api-contract.md)**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Quick Reference
 
-## 🙏 Acknowledgments
+| Endpoint                    | Method | Description                               |
+| --------------------------- | ------ | ----------------------------------------- |
+| `/api/health`               | GET    | Health check and service status           |
+| `/api/search`               | POST   | Process natural language location queries |
+| `/api/locations/{place_id}` | GET    | Get detailed location information         |
+| `/api/nearby`               | GET    | Find nearby places based on coordinates   |
 
-- Google Maps Platform for location services
-- OpenWebUI for LLM integration
-- React community for frontend tools
-- Contributors and testers
+### Development URLs
 
-## 📞 Support
-
-For support, please open an issue on GitHub or contact the development team.
-
----
-
-Built with ❤️ by [Your Name] | [Your GitHub Profile]
+- **Frontend**: http://localhost:3000 (React development server)
+- **Backend API**: http://localhost:8000 (Express server)
+- **OpenWebUI**: http://localhost:3001 (if running locally)
+- **API Documentation**: [./docs/api-contract.md](./docs/api-contract.md)
