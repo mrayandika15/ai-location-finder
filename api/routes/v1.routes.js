@@ -6,22 +6,17 @@ const OpenWebUIService = require("../services/openwebui.service");
 const openWebUIService = new OpenWebUIService();
 
 /**
- * Query OpenWebUI Model Endpoint
- * POST /api/openwebui/query
+ * AI Query Endpoint
+ * POST /api/v1/query
  *
  * Business Purpose: Direct AI model interaction for natural language processing
- * Use Case: Send prompts to gemma3:1b model and receive AI-generated responses
+ * Use Case: Send prompts to AI models and receive generated responses
  */
 router.post("/query", async (req, res) => {
   try {
     const { prompt, model, max_tokens, temperature } = req.body;
 
-    // Basic validation is handled in service layer
-    // Additional route-level validation can be added here if needed
-
-    console.log(
-      `🚀 Processing OpenWebUI query: ${prompt?.substring(0, 50)}...`
-    );
+    console.log(`🚀 Processing AI query: ${prompt?.substring(0, 50)}...`);
 
     // Prepare options
     const options = {};
@@ -46,7 +41,7 @@ router.post("/query", async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("❌ OpenWebUI query failed:", error);
+    console.error("❌ AI query failed:", error);
 
     // Map service errors to HTTP status codes
     const { statusCode, errorCode } = _mapErrorToHttpStatus(error);
@@ -66,14 +61,14 @@ router.post("/query", async (req, res) => {
 
 /**
  * Get Available Models Endpoint
- * GET /api/openwebui/models
+ * GET /api/v1/models
  *
- * Business Purpose: List all available AI models in OpenWebUI instance
+ * Business Purpose: List all available AI models
  * Use Case: Allow users to see what models are available for querying
  */
 router.get("/models", async (req, res) => {
   try {
-    console.log("📋 Fetching available OpenWebUI models");
+    console.log("📋 Fetching available AI models");
 
     const result = await openWebUIService.getAvailableModels();
 
@@ -104,15 +99,15 @@ router.get("/models", async (req, res) => {
 });
 
 /**
- * OpenWebUI Health Check Endpoint
- * GET /api/openwebui/health
+ * Service Status Endpoint
+ * GET /api/v1/status
  *
- * Business Purpose: Check OpenWebUI service connectivity and status
- * Use Case: Monitor if OpenWebUI is operational before sending queries
+ * Business Purpose: Check AI service connectivity and status
+ * Use Case: Monitor if AI service is operational before sending queries
  */
-router.get("/health", async (req, res) => {
+router.get("/status", async (req, res) => {
   try {
-    console.log("🏥 Checking OpenWebUI health");
+    console.log("🔍 Checking AI service status");
 
     const healthCheck = await openWebUIService.checkServiceHealth();
 
@@ -128,17 +123,17 @@ router.get("/health", async (req, res) => {
         api_url: healthCheck.apiUrl,
         default_model: healthCheck.defaultModel,
       },
-      message: `OpenWebUI is ${healthCheck.status}`,
+      message: `AI service is ${healthCheck.status}`,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("❌ OpenWebUI health check failed:", error);
+    console.error("❌ AI service status check failed:", error);
 
     res.status(503).json({
       success: false,
       error: {
         code: "SERVICE_UNAVAILABLE",
-        message: "OpenWebUI health check failed",
+        message: "AI service status check failed",
         details:
           process.env.NODE_ENV === "development"
             ? { error: error.message }

@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 // Import routes
-const { healthRoutes, openwebuiRoutes } = require("./routes");
+const { v1Routes } = require("./routes");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -29,15 +29,20 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use("/api/health", healthRoutes);
-app.use("/api/openwebui", openwebuiRoutes);
+app.use("/api/v1", v1Routes);
 
 // Root endpoint
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "AI Location Finder API Gateway",
+    message: "AI Location Finder API",
     version: "1.0.0",
+    api_version: "v1",
+    endpoints: {
+      query: "POST /api/v1/query",
+      models: "GET /api/v1/models",
+      status: "GET /api/v1/status",
+    },
     timestamp: new Date().toISOString(),
   });
 });

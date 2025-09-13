@@ -4,9 +4,7 @@
  */
 
 const OpenWebUIClient = require("./openwebui-client");
-const GoogleMapsClient = require("./google-maps-client");
 
 module.exports = {
   OpenWebUIClient,
-  GoogleMapsClient,
 };

@@ -3,10 +3,8 @@
  * Central export point for all API routes
  */
 
-const healthRoutes = require("./health.routes");
-const openwebuiRoutes = require("./openwebui.routes");
+const v1Routes = require("./v1.routes");
 
 module.exports = {
-  healthRoutes,
-  openwebuiRoutes,
+  v1Routes,
 };

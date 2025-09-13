@@ -1,7 +1,7 @@
 {
-  "name": "ai-location-finder-service",
+  "name": "ai-location-finder-api",
   "version": "1.0.0",
-  "description": "AI Location Finder Backend API Gateway",
+  "description": "AI Location Finder API - OpenWebUI Integration",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -9,10 +9,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "location",
     "ai",
-    "maps",
-    "api"
+    "openwebui",
+    "api",
+    "gemma"
   ],
   "author": "",
   "license": "ISC",
