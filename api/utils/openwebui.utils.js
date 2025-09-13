@@ -76,10 +76,9 @@ function transformOpenWebUIResponse(prompt, rawResponse, model) {
 /**
  * Transform models response to standardized format
  * @param {Array} models - Raw models array
- * @param {string} defaultModel - Default model name
  * @returns {Object} Transformed models response
  */
-function transformModelsResponse(models, defaultModel = "gemma3:1b") {
+function transformModelsResponse(models) {
   return {
     models: models.map((model) => ({
       id: model.id,
@@ -88,7 +87,6 @@ function transformModelsResponse(models, defaultModel = "gemma3:1b") {
       created: model.created,
     })),
     totalCount: models.length,
-    defaultModel,
   };
 }
 
@@ -96,21 +94,15 @@ function transformModelsResponse(models, defaultModel = "gemma3:1b") {
  * Transform health response to standardized format
  * @param {Object} healthData - Raw health data
  * @param {string} apiUrl - API URL
- * @param {string} defaultModel - Default model
  * @returns {Object} Transformed health response
  */
-function transformHealthResponse(
-  healthData,
-  apiUrl,
-  defaultModel = "gemma3:1b"
-) {
+function transformHealthResponse(healthData, apiUrl) {
   return {
     service: "OpenWebUI",
     status: "healthy",
     version: healthData.version || "unknown",
     uptime: healthData.uptime || null,
     apiUrl,
-    defaultModel,
   };
 }
 
@@ -118,12 +110,11 @@ function transformHealthResponse(
  * Create OpenWebUI query payload
  * @param {string} prompt - User prompt
  * @param {Object} options - Query options
- * @param {string} defaultModel - Default model
  * @returns {Object} Query payload
  */
-function createQueryPayload(prompt, options = {}, defaultModel = "gemma3:1b") {
+function createQueryPayload(prompt, options = {}) {
   const {
-    model = defaultModel,
+    model = "gemma3:1b",
     max_tokens = 500,
     temperature = 0.7,
     stream = false,

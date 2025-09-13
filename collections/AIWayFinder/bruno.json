@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "AIWayFinder",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

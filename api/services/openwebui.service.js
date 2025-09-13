@@ -23,11 +23,7 @@ class OpenWebUIService {
     openwebui.validateQueryParams(prompt, options);
 
     // Prepare request payload using utils
-    const payload = openwebui.createQueryPayload(
-      prompt,
-      options,
-      this.client.defaultModel
-    );
+    const payload = openwebui.createQueryPayload(prompt, options);
 
     try {
       // Send request to OpenWebUI
@@ -58,7 +54,7 @@ class OpenWebUIService {
       // Transform response using utils
       return {
         success: true,
-        ...openwebui.transformModelsResponse(models, this.client.defaultModel),
+        ...openwebui.transformModelsResponse(models),
       };
     } catch (error) {
       // Extract error details using utils
@@ -78,11 +74,7 @@ class OpenWebUIService {
       // Transform response using utils
       return {
         success: true,
-        ...openwebui.transformHealthResponse(
-          healthData,
-          this.client.apiUrl,
-          this.client.defaultModel
-        ),
+        ...openwebui.transformHealthResponse(healthData, this.client.apiUrl),
       };
     } catch (error) {
       // Extract error details using utils

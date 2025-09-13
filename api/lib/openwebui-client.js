@@ -53,16 +53,13 @@ class OpenWebUIClient {
     try {
       console.log("🔍 Fetching models from OpenWebUI");
 
-      const response = await axios.get(`${this.apiUrl}/v1/models`, {
+      const response = await axios.get(`${this.apiUrl}/api/v1/models`, {
         timeout: 10000,
         headers: {
           ...(this.apiKey && { Authorization: `Bearer ${this.apiKey}` }),
         },
       });
 
-      console.log(
-        `✅ Models fetched: ${response.data.data?.length || 0} models`
-      );
       return response.data;
     } catch (error) {
       console.error("❌ Failed to fetch models:", error.message);

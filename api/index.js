@@ -41,7 +41,6 @@ app.get("/", (req, res) => {
     endpoints: {
       query: "POST /api/v1/query",
       models: "GET /api/v1/models",
-      status: "GET /api/v1/status",
     },
     timestamp: new Date().toISOString(),
   });
