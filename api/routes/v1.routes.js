@@ -30,4 +30,44 @@ router.get("/models", async (req, res) => {
   }
 });
 
+router.post("/chat", async (req, res) => {
+  try {
+    const { title, message, models } = req.body;
+
+    logs.logOperation("Chat", "Creating new chat with completion", {
+      title: title || "AI Chat",
+      hasMessage: !!message,
+      models: models,
+    });
+
+    const result = await aiService.createChatCompletion({
+      title: title || "AI Chat",
+      userMessage: message,
+      models: models,
+    });
+
+    logs.logOperation("Chat", "Chat with completion created successfully", {
+      chatId: result.chatId,
+      assistantMessageId: result.assistantMessageId,
+    });
+
+    http.sendSuccess(
+      res,
+      {
+        chat_id: result.chatId,
+        assistant_message_id: result.assistantMessageId,
+        chat: result.chat,
+        completion: result.completion,
+      },
+      "Chat with completion created successfully"
+    );
+  } catch (error) {
+    logs.logOperation("Chat", "Failed to create chat with completion", {
+      error: true,
+    });
+
+    http.sendError(res, error, { includeStack: true });
+  }
+});
+
 module.exports = router;

@@ -80,9 +80,135 @@ function extractErrorDetails(error) {
   return details;
 }
 
+function generateMessageId() {
+  return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function createChatMessage(options = {}) {
+  const {
+    id = generateMessageId(),
+    role = "user",
+    content = "",
+    timestamp = Date.now(),
+    models = [],
+  } = options;
+
+  if (!content || typeof content !== "string") {
+    throw new Error("Message content is required and must be a string");
+  }
+
+  if (!["user", "assistant", "system"].includes(role)) {
+    throw new Error("Message role must be 'user', 'assistant', or 'system'");
+  }
+
+  return {
+    id,
+    role,
+    content,
+    timestamp,
+    models,
+  };
+}
+
+function createAssistantMessage(options = {}) {
+  const {
+    id = generateMessageId(),
+    content = "",
+    parentId = null,
+    modelName = "",
+    modelIdx = 0,
+    timestamp = Date.now(),
+    models = [],
+  } = options;
+
+  if (!parentId) {
+    throw new Error("Parent ID is required for assistant messages");
+  }
+
+  if (!modelName) {
+    throw new Error("Model name is required for assistant messages");
+  }
+
+  return {
+    id,
+    role: "assistant",
+    content,
+    parentId,
+    modelName,
+    modelIdx,
+    timestamp,
+    models,
+  };
+}
+
+function createOpenWebUIChatStructure(options = {}) {
+  const {
+    title = "New Chat",
+    models = [],
+    userMessage = null,
+    includeAssistantMessage = false,
+  } = options;
+
+  // Convert models string to array if needed
+  const modelsArray =
+    typeof models === "string" ? [models] : Array.isArray(models) ? models : [];
+
+  let messages = [];
+  let userMessageId = null;
+
+  // Create initial user message if provided
+  if (userMessage && typeof userMessage === "string") {
+    const message = createChatMessage({
+      role: "user",
+      content: userMessage,
+      models: modelsArray,
+    });
+
+    messages.push(message);
+    userMessageId = message.id;
+
+    // Add assistant message if requested (for backend-controlled flow)
+    if (includeAssistantMessage && modelsArray.length > 0) {
+      const assistantMessage = createAssistantMessage({
+        content: "",
+        parentId: userMessageId,
+        modelName: modelsArray[0],
+        modelIdx: 0,
+        models: modelsArray,
+      });
+
+      messages.push(assistantMessage);
+    }
+  }
+
+  return {
+    chat: {
+      title,
+      models: modelsArray,
+      messages,
+    },
+  };
+}
+
+function createChatWithAssistantMessage(options = {}) {
+  const { title = "New Chat", models = [], userMessage = null } = options;
+
+  return createOpenWebUIChatStructure({
+    title,
+    models,
+    userMessage,
+    includeAssistantMessage: true,
+  });
+}
+
 module.exports = {
   validateQueryParams,
   transformModelsResponse,
   generateRequestId,
   extractErrorDetails,
+  generateMessageId,
+  createChatMessage,
+  createAssistantMessage,
+  createOpenWebUIChatStructure,
+  createChatWithAssistantMessage,
 };

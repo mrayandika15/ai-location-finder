@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "timestamp": "2025-09-13T12:46:18.275Z",
+  "data": {
+    "chat_id": "42d7370e-ee5d-4532-9d66-1beb15b2d192",
+    "chat": {
+      "id": "42d7370e-ee5d-4532-9d66-1beb15b2d192",
+      "user_id": "efc76a88-3151-4d23-bca3-1c4220598241",
+      "title": "testing",
+      "chat": {
+        "title": "testing",
+        "models": ["gemma3:1b"],
+        "messages": [
+          {
+            "id": "msg_1757767578215_3ieztw1e8",
+            "role": "user",
+            "content": "can you give me food recommendations",
+            "timestamp": 1757767578215,
+            "models": ["gemma3:1b"]
+          },
+          {
+            "id": "msg_1757767578215_uvcntsm41",
+            "role": "assistant",
+            "content": "",
+            "parentId": "msg_1757767578215_3ieztw1e8",
+            "modelName": "gemma3:1b",
+            "modelIdx": 0,
+            "timestamp": 1757767578215,
+            "models": ["gemma3:1b"]
+          }
+        ]
+      },
+      "updated_at": 1757767578,
+      "created_at": 1757767578,
+      "share_id": null,
+      "archived": false,
+      "pinned": false,
+      "meta": {},
+      "folder_id": null
+    }
+  },
+  "message": "Chat with assistant message created successfully"
+}
