@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const OpenWebUIService = require("../services/openwebui.service");
+const AIService = require("../services/ai.service");
 const { http, openwebui } = require("../utils");
 
-// Initialize OpenWebUI service
-const openWebUIService = new OpenWebUIService();
+// Initialize AI service
+const aiService = new AIService();
 
 /**
  * AI Query Endpoint
@@ -12,6 +12,7 @@ const openWebUIService = new OpenWebUIService();
  *
  * Business Purpose: Direct AI model interaction for natural language processing
  * Use Case: Send prompts to AI models and receive generated responses
+ * Service: Handles all AI-related business logic through AIService
  */
 router.post("/query", async (req, res) => {
   try {
@@ -30,8 +31,8 @@ router.post("/query", async (req, res) => {
     if (temperature !== undefined)
       options.temperature = parseFloat(temperature);
 
-    // Process query through service layer
-    const result = await openWebUIService.processQuery(prompt, options);
+    // Process query through AI service layer
+    const result = await aiService.processQuery(prompt, options);
 
     // Log successful operation
     openwebui.logOperation("Query", "Query processed successfully", {
@@ -69,13 +70,14 @@ router.post("/query", async (req, res) => {
  *
  * Business Purpose: List all available AI models
  * Use Case: Allow users to see what models are available for querying
+ * Service: Retrieves model information through AIService
  */
 router.get("/models", async (req, res) => {
   try {
     // Log operation start
     openwebui.logOperation("Models", "Fetching available AI models");
 
-    const result = await openWebUIService.getAvailableModels();
+    const result = await aiService.getAvailableModels();
 
     // Log successful operation
     openwebui.logOperation("Models", "Models retrieved successfully", {

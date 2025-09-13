@@ -3,8 +3,8 @@
  * Central export point for all business logic services
  */
 
-const OpenWebUIService = require("./openwebui.service");
+const AIService = require("./ai.service");
 
 module.exports = {
-  OpenWebUIService,
+  AIService,
 };
