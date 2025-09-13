@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const OpenWebUIService = require("../services/openwebui.service");
+const { http, openwebui } = require("../utils");
 
 // Initialize OpenWebUI service
 const openWebUIService = new OpenWebUIService();
@@ -16,7 +17,11 @@ router.post("/query", async (req, res) => {
   try {
     const { prompt, model, max_tokens, temperature } = req.body;
 
-    console.log(`🚀 Processing AI query: ${prompt?.substring(0, 50)}...`);
+    // Log operation start
+    openwebui.logOperation("Query", "Processing AI query", {
+      prompt: prompt?.substring(0, 50) + (prompt?.length > 50 ? "..." : ""),
+      model: model || "default",
+    });
 
     // Prepare options
     const options = {};
@@ -28,34 +33,33 @@ router.post("/query", async (req, res) => {
     // Process query through service layer
     const result = await openWebUIService.processQuery(prompt, options);
 
-    res.json({
-      success: result.success,
-      data: {
+    // Log successful operation
+    openwebui.logOperation("Query", "Query processed successfully", {
+      model: result.model,
+      responseLength: result.response.length,
+    });
+
+    // Send standardized success response
+    http.sendSuccess(
+      res,
+      {
         prompt: result.prompt,
         response: result.response,
         model: result.model,
         usage: result.usage,
         metadata: result.metadata,
       },
-      message: "Query processed successfully",
-      timestamp: new Date().toISOString(),
-    });
+      "Query processed successfully"
+    );
   } catch (error) {
-    console.error("❌ AI query failed:", error);
-
-    // Map service errors to HTTP status codes
-    const { statusCode, errorCode } = _mapErrorToHttpStatus(error);
-
-    res.status(statusCode).json({
-      success: false,
-      error: {
-        code: errorCode,
-        message: error.message,
-        details:
-          process.env.NODE_ENV === "development" ? { stack: error.stack } : {},
-      },
-      timestamp: new Date().toISOString(),
+    // Log error operation
+    openwebui.logOperation("Query", "Query processing failed", {
+      error: true,
+      prompt: req.body.prompt?.substring(0, 50),
     });
+
+    // Send standardized error response
+    http.sendError(res, error, { includeStack: true });
   }
 });
 
@@ -68,33 +72,32 @@ router.post("/query", async (req, res) => {
  */
 router.get("/models", async (req, res) => {
   try {
-    console.log("📋 Fetching available AI models");
+    // Log operation start
+    openwebui.logOperation("Models", "Fetching available AI models");
 
     const result = await openWebUIService.getAvailableModels();
 
-    res.json({
-      success: result.success,
-      data: {
+    // Log successful operation
+    openwebui.logOperation("Models", "Models retrieved successfully", {
+      totalCount: result.totalCount,
+    });
+
+    // Send standardized success response
+    http.sendSuccess(
+      res,
+      {
         models: result.models,
         total_count: result.totalCount,
         default_model: result.defaultModel,
       },
-      message: "Models retrieved successfully",
-      timestamp: new Date().toISOString(),
-    });
+      "Models retrieved successfully"
+    );
   } catch (error) {
-    console.error("❌ Failed to fetch models:", error);
+    // Log error operation
+    openwebui.logOperation("Models", "Failed to fetch models", { error: true });
 
-    res.status(500).json({
-      success: false,
-      error: {
-        code: "INTERNAL_ERROR",
-        message: error.message,
-        details:
-          process.env.NODE_ENV === "development" ? { stack: error.stack } : {},
-      },
-      timestamp: new Date().toISOString(),
-    });
+    // Send standardized error response
+    http.sendError(res, error, { includeStack: true });
   }
 });
 
@@ -107,15 +110,27 @@ router.get("/models", async (req, res) => {
  */
 router.get("/status", async (req, res) => {
   try {
-    console.log("🔍 Checking AI service status");
+    // Log operation start
+    openwebui.logOperation("Status", "Checking AI service status");
 
     const healthCheck = await openWebUIService.checkServiceHealth();
 
-    const statusCode = healthCheck.success ? 200 : 503;
+    // Log operation result
+    openwebui.logOperation("Status", `Service is ${healthCheck.status}`, {
+      status: healthCheck.status,
+    });
 
-    res.status(statusCode).json({
-      success: healthCheck.success,
-      data: {
+    // Determine status code
+    const statusCode = healthCheck.success
+      ? http.StatusCodes.OK
+      : http.StatusCodes.SERVICE_UNAVAILABLE;
+
+    // Send response with appropriate status code
+    http.sendResponse(
+      res,
+      statusCode,
+      healthCheck.success,
+      {
         service: healthCheck.service,
         status: healthCheck.status,
         version: healthCheck.version,
@@ -123,58 +138,31 @@ router.get("/status", async (req, res) => {
         api_url: healthCheck.apiUrl,
         default_model: healthCheck.defaultModel,
       },
-      message: `AI service is ${healthCheck.status}`,
-      timestamp: new Date().toISOString(),
-    });
+      `AI service is ${healthCheck.status}`
+    );
   } catch (error) {
-    console.error("❌ AI service status check failed:", error);
+    // Log error operation
+    openwebui.logOperation("Status", "Service status check failed", {
+      error: true,
+    });
 
-    res.status(503).json({
-      success: false,
-      error: {
+    // Send service unavailable response
+    http.sendResponse(
+      res,
+      http.StatusCodes.SERVICE_UNAVAILABLE,
+      false,
+      null,
+      "AI service status check failed",
+      {
         code: "SERVICE_UNAVAILABLE",
         message: "AI service status check failed",
         details:
           process.env.NODE_ENV === "development"
             ? { error: error.message }
             : {},
-      },
-      timestamp: new Date().toISOString(),
-    });
+      }
+    );
   }
 });
-
-/**
- * Map service layer errors to appropriate HTTP status codes
- * @private
- */
-function _mapErrorToHttpStatus(error) {
-  // Validation errors
-  if (
-    error.message.includes("required") ||
-    error.message.includes("must be") ||
-    error.message.includes("too long")
-  ) {
-    return { statusCode: 400, errorCode: "INVALID_REQUEST" };
-  }
-
-  // Service connectivity errors
-  if (error.message.includes("Cannot connect")) {
-    return { statusCode: 503, errorCode: "SERVICE_UNAVAILABLE" };
-  }
-
-  // Authentication errors
-  if (error.message.includes("Authentication failed")) {
-    return { statusCode: 401, errorCode: "AUTHENTICATION_FAILED" };
-  }
-
-  // Not found errors
-  if (error.message.includes("not found")) {
-    return { statusCode: 404, errorCode: "SERVICE_NOT_FOUND" };
-  }
-
-  // Default to internal server error
-  return { statusCode: 500, errorCode: "INTERNAL_ERROR" };
-}
 
 module.exports = router;
