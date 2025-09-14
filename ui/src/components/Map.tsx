@@ -6,14 +6,8 @@ import {
   Marker,
   InfoWindow,
 } from "@react-google-maps/api";
-import type { LocationResult, MapViewport } from "../types";
-
-interface MapComponentProps {
-  mapViewport: MapViewport;
-  searchResults: LocationResult[];
-  selectedLocation: LocationResult | null;
-  onLocationSelect?: (location: LocationResult) => void;
-}
+import type { LocationResult } from "../types";
+import { useMapStore } from "../store/map";
 
 // Google Maps container style
 const mapContainerStyle = {
@@ -32,12 +26,10 @@ const mapOptions = {
   zoomControl: true,
 };
 
-const Map: React.FC<MapComponentProps> = ({
-  mapViewport,
-  searchResults,
-  selectedLocation,
-  onLocationSelect,
-}) => {
+const Map: React.FC = () => {
+  // Get state from Zustand store
+  const { mapViewport, searchResults, selectedLocation, setSelectedLocation } =
+    useMapStore();
   const mapRef = useRef<google.maps.Map | null>(null);
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -54,9 +46,9 @@ const Map: React.FC<MapComponentProps> = ({
   const handleMarkerClick = useCallback(
     (location: LocationResult) => {
       setActiveMarker(location.place_id);
-      onLocationSelect?.(location);
+      setSelectedLocation(location);
     },
-    [onLocationSelect]
+    [setSelectedLocation]
   );
 
   // Handle info window close

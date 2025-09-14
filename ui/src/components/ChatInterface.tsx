@@ -15,7 +15,7 @@ import useStreamingCompletion from "../hooks/useStreamingCompletion";
 import { useWebhook } from "../hooks/useWebhook";
 import type { ChatEvent } from "../types";
 import type { SearchRequest } from "../types/search.types";
-import { detectSearchIntent, extractSearchRequest } from "../utils";
+import { extractSearchRequest } from "../utils";
 import AIMessageLoading from "./AIMessageLoading";
 import AvatarMessage from "./AvatarMessage";
 import PlacesList from "./PlacesList";
