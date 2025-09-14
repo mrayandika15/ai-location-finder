@@ -72,3 +72,6 @@ export interface ChatMessage {
 }
 
 // Store Types (Zustand store interface is defined in store/useAppStore.ts)
+
+// Re-export AI types
+export * from "./ai.types";

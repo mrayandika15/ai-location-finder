@@ -21,33 +21,66 @@ class AIService {
     }
   }
 
-  async createChatCompletion(options) {
+  async createChatCompletion({ title = "AI Chat", userMessage, models }) {
     try {
-      const { title = "AI Chat", userMessage, models } = options;
-
-      const message = await this.client.createChat({
+      const initialMessagePayload = openwebui.createChatPayload({
         title,
-        userMessage,
         models,
+        userMessage,
       });
-      const modelsArray = typeof models === "string" ? [models] : models;
 
-      const completionData = {
-        chatId: message.id,
-        assistantMessageId: message.assistantMessageId,
-        model: modelsArray[0],
+      const newChat = await this.client.createChat(initialMessagePayload);
+
+      const newChatId = newChat?.id;
+      const newChatSessionId = newChat?.chat?.session_id;
+
+      const assistedMessagePayload = openwebui.createAssistantPayload({
+        chatId: newChatId,
+        title,
+        models,
+        userMessage,
+      });
+
+      const addAssistedMessage = await this.client.editChat(
+        newChatId,
+        assistedMessagePayload
+      );
+
+      const assistantMessageId = addAssistedMessage?.chat?.messages?.[1]?.id;
+
+      const completionMessagePayload = openwebui.createCompletionPayload({
+        chatId: newChatId,
+        assistantMessageId,
+        model: Array.isArray(models) ? models[0] : models,
+        stream: true,
+        sessionId: newChatSessionId,
         messages: [
           {
             role: "user",
             content: userMessage,
           },
         ],
-      };
+      });
 
-      const completion = await this.client.triggerCompletion(completionData);
+      const triggerStreamingCompletion =
+        await this.client.triggerStreamingCompletion(completionMessagePayload);
+
+      const processStreamingResponse =
+        await this.client.processStreamingResponse(
+          triggerStreamingCompletion,
+          assistantMessageId
+        );
+
+      const completeChatResponse = await this.client.completeChat(
+        newChatId,
+        assistantMessageId,
+        newChatSessionId,
+        Array.isArray(models) ? models[0] : models,
+        [addAssistedMessage]
+      );
 
       return {
-        completion,
+        ...completeChatResponse,
       };
     } catch (error) {
       const errorDetails = openwebui.extractErrorDetails(error);

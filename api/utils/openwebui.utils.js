@@ -84,28 +84,12 @@ function generateMessageId() {
   return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function createChatMessage(options = {}) {
-  const {
-    id = generateMessageId(),
-    role = "user",
-    content = "",
-    timestamp = Date.now(),
-    models = [],
-  } = options;
-
-  if (!content || typeof content !== "string") {
-    throw new Error("Message content is required and must be a string");
-  }
-
-  if (!["user", "assistant", "system"].includes(role)) {
-    throw new Error("Message role must be 'user', 'assistant', or 'system'");
-  }
-
+function createUserChatMessage({ content, models }) {
   return {
-    id,
-    role,
+    id: generateMessageId(),
+    role: "user",
     content,
-    timestamp,
+    timestamp: Date.now(),
     models,
   };
 }
@@ -158,7 +142,7 @@ function createOpenWebUIChatStructure(options = {}) {
 
   // Create initial user message if provided
   if (userMessage && typeof userMessage === "string") {
-    const message = createChatMessage({
+    const message = createUserChatMessage({
       role: "user",
       content: userMessage,
       models: modelsArray,
@@ -190,15 +174,198 @@ function createOpenWebUIChatStructure(options = {}) {
   };
 }
 
-function createChatWithAssistantMessage(options = {}) {
-  const { title = "New Chat", models = [], userMessage = null } = options;
+function createChatPayload({
+  title = "New Chat",
+  models = [],
+  userMessage = null,
+}) {
+  // Generate session ID
+  const sessionId = `session_${Date.now()}_${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
 
-  return createOpenWebUIChatStructure({
-    title,
-    models,
-    userMessage,
-    includeAssistantMessage: true,
-  });
+  // Convert models string to array if needed
+  const modelsArray =
+    typeof models === "string" ? [models] : Array.isArray(models) ? models : [];
+
+  let messages = [];
+  let userMessageId = null;
+  let historyMessages = {};
+
+  // Create initial user message if provided
+  if (userMessage && typeof userMessage === "string") {
+    const message = createUserChatMessage({
+      role: "user",
+      content: userMessage,
+      models: modelsArray,
+    });
+
+    messages.push(message);
+    userMessageId = message.id;
+    historyMessages[userMessageId] = message;
+  }
+
+  return {
+    chat: {
+      title,
+      models: modelsArray,
+      messages,
+      history: {
+        current_id: userMessageId,
+        messages: historyMessages,
+      },
+      session_id: sessionId,
+    },
+  };
+}
+
+function createAssistantPayload({
+  chatId,
+  title = "New Chat",
+  models = [],
+  userMessage = null,
+  assistantMessageId = null,
+}) {
+  // Convert models string to array if needed
+  const modelsArray =
+    typeof models === "string" ? [models] : Array.isArray(models) ? models : [];
+
+  let messages = [];
+  let userMessageId = null;
+  let assistantMessageIdFinal = null;
+  let historyMessages = {};
+
+  // Create initial user message if provided
+  if (userMessage && typeof userMessage === "string") {
+    const message = createUserChatMessage({
+      role: "user",
+      content: userMessage,
+      models: modelsArray,
+    });
+
+    messages.push(message);
+    userMessageId = message.id;
+    historyMessages[userMessageId] = message;
+
+    // Add assistant message (for backend-controlled flow)
+    if (modelsArray.length > 0) {
+      const assistantMessage = createAssistantMessage({
+        id: assistantMessageId || generateMessageId(),
+        content: "",
+        parentId: userMessageId,
+        modelName: modelsArray[0],
+        modelIdx: 0,
+        models: modelsArray,
+      });
+
+      messages.push(assistantMessage);
+      assistantMessageIdFinal = assistantMessage.id;
+      historyMessages[assistantMessageIdFinal] = assistantMessage;
+    }
+  }
+
+  return {
+    chat: {
+      id: chatId,
+      title,
+      models: modelsArray,
+      messages,
+      history: {
+        current_id: assistantMessageIdFinal || userMessageId,
+        messages: historyMessages,
+      },
+    },
+  };
+}
+
+function createChatWithAssistantPayload({
+  title = "New Chat",
+  models = [],
+  userMessage = null,
+}) {
+  // Generate chat ID automatically
+  const chatId = `chat_${Date.now()}_${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
+
+  // Generate session ID
+  const sessionId = `session_${Date.now()}_${Math.random()
+    .toString(36)
+    .substr(2, 9)}`;
+
+  // Convert models string to array if needed
+  const modelsArray =
+    typeof models === "string" ? [models] : Array.isArray(models) ? models : [];
+
+  let messages = [];
+  let userMessageId = null;
+  let assistantMessageId = null;
+  let historyMessages = {};
+
+  // Create initial user message if provided
+  if (userMessage && typeof userMessage === "string") {
+    const message = createUserChatMessage({
+      content: userMessage,
+      models: modelsArray,
+    });
+
+    messages.push(message);
+    userMessageId = message.id;
+    historyMessages[userMessageId] = message;
+
+    // Add assistant message (for backend-controlled flow)
+    if (modelsArray.length > 0) {
+      const assistantMessage = createAssistantMessage({
+        id: generateMessageId(), // Auto-generate assistant message ID
+        content: "",
+        parentId: userMessageId,
+        modelName: modelsArray[0],
+        modelIdx: 0,
+        models: modelsArray,
+      });
+
+      messages.push(assistantMessage);
+      assistantMessageId = assistantMessage.id;
+      historyMessages[assistantMessageId] = assistantMessage;
+    }
+  }
+
+  return {
+    chat: {
+      id: chatId,
+      title,
+      models: modelsArray,
+      messages,
+      history: {
+        current_id: assistantMessageId || userMessageId,
+        messages: historyMessages,
+      },
+      session_id: sessionId,
+    },
+  };
+}
+
+function createCompletionPayload({
+  chatId,
+  assistantMessageId,
+  model,
+  messages = [],
+  stream = false,
+  sessionId = null,
+}) {
+  return {
+    chat_id: chatId,
+    id: assistantMessageId,
+    messages: messages,
+    model: model,
+    stream: stream,
+    session_id: sessionId,
+    background_tasks: {
+      title_generation: true,
+      tags_generation: false,
+      follow_up_generation: false,
+    },
+  };
 }
 
 module.exports = {
@@ -207,8 +374,11 @@ module.exports = {
   generateRequestId,
   extractErrorDetails,
   generateMessageId,
-  createChatMessage,
+  createUserChatMessage,
   createAssistantMessage,
   createOpenWebUIChatStructure,
-  createChatWithAssistantMessage,
+  createChatPayload,
+  createAssistantPayload,
+  createChatWithAssistantPayload,
+  createCompletionPayload,
 };

@@ -46,18 +46,10 @@ router.post("/chat", async (req, res) => {
       models: models,
     });
 
-    logs.logOperation("Chat", "Chat with completion created successfully", {
-      chatId: result.chatId,
-      assistantMessageId: result.assistantMessageId,
-    });
-
     http.sendSuccess(
       res,
       {
-        chat_id: result.chatId,
-        assistant_message_id: result.assistantMessageId,
-        chat: result.chat,
-        completion: result.completion,
+        ...result,
       },
       "Chat with completion created successfully"
     );
