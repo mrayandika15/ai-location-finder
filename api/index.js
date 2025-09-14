@@ -14,10 +14,10 @@ const PORT = process.env.PORT || 8000;
 // Middleware - CORS configuration
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  process.env.FRONTEND_URL?.replace(/\/$/, ''), // Remove trailing slash
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://localhost:5174',
+  process.env.FRONTEND_URL?.replace(/\/$/, ""), // Remove trailing slash
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5174",
 ].filter(Boolean);
 
 app.use(
@@ -31,12 +31,12 @@ app.use(
       } else {
         console.log(`❌ CORS blocked origin: ${origin}`);
         console.log(`✅ Allowed origins:`, allowedOrigins);
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
 
@@ -63,8 +63,6 @@ app.get("/", (req, res) => {
       search: "POST /api/v1/search",
       place_details: "GET /api/v1/place/:placeId",
       geocode: "POST /api/v1/geocode",
-      models: "GET /api/v1/models",
-      chat: "POST /api/v1/chat",
     },
     cors_allowed_origins: allowedOrigins,
     timestamp: new Date().toISOString(),

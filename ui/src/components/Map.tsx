@@ -1,11 +1,12 @@
 import { Alert, Box, Paper, Typography } from "@mui/material";
 import {
-  GoogleMap,
+  APIProvider,
+  Map as GoogleMap,
+  AdvancedMarker,
   InfoWindow,
-  LoadScript,
-  Marker,
-} from "@react-google-maps/api";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+  Pin,
+} from "@vis.gl/react-google-maps";
+import React, { useCallback, useEffect, useState } from "react";
 import { useMapStore } from "../store/map";
 import type { SearchPlace } from "../types/search.types";
 
@@ -15,32 +16,15 @@ const mapContainerStyle = {
   height: "100%",
 };
 
-// Google Maps options
-const mapOptions = {
-  disableDefaultUI: false,
-  clickableIcons: true,
-  scrollwheel: true,
-  mapTypeControl: true,
-  streetViewControl: true,
-  fullscreenControl: true,
-  zoomControl: true,
-};
-
 const Map: React.FC = () => {
   // Get state from Zustand store
   const { mapViewport, searchResults, selectedLocation, setSelectedLocation } =
     useMapStore();
-  const mapRef = useRef<google.maps.Map | null>(null);
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
 
   // Get Google Maps API key from environment
   const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-  // Handle map load
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-  }, []);
 
   // Handle marker click
   const handleMarkerClick = useCallback(
@@ -62,14 +46,6 @@ const Map: React.FC = () => {
       "Failed to load Google Maps. Please check your API key configuration."
     );
   }, []);
-
-  // Effect to update map center when viewport changes
-  useEffect(() => {
-    if (mapRef.current && mapViewport) {
-      mapRef.current.panTo(mapViewport.center);
-      mapRef.current.setZoom(mapViewport.zoom);
-    }
-  }, [mapViewport]);
 
   // Effect to set active marker when location is selected externally
   useEffect(() => {
@@ -209,31 +185,43 @@ const Map: React.FC = () => {
 
       {/* Map Container */}
       <Box sx={{ flex: 1, width: "100%" }}>
-        <LoadScript
-          googleMapsApiKey={googleMapsApiKey}
+        <APIProvider
+          apiKey={googleMapsApiKey}
+          onLoad={() => console.log("Google Maps API loaded")}
           onError={handleMapError}
         >
           <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={mapViewport.center}
-            zoom={mapViewport.zoom}
-            options={mapOptions}
-            onLoad={onMapLoad}
+            style={mapContainerStyle}
+            defaultCenter={mapViewport.center}
+            defaultZoom={mapViewport.zoom}
+            mapId="DEMO_MAP_ID"
+            disableDefaultUI={true}
+            clickableIcons={true}
+            scrollwheel={true}
+            mapTypeControl={true}
+            streetViewControl={true}
+            fullscreenControl={true}
+            zoomControl={true}
           >
             {/* Render markers for search results */}
             {searchResults.map((location) => (
-              <Marker
+              <AdvancedMarker
                 key={location.id}
-                position={location.coordinates}
-                onClick={() => handleMarkerClick(location)}
-                icon={{
-                  url:
-                    selectedLocation?.id === location.id
-                      ? "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-                      : "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-                  scaledSize: new window.google.maps.Size(40, 40),
+                position={{
+                  lat: location.coordinates.lat,
+                  lng: location.coordinates.lng,
                 }}
-              />
+                onClick={() => handleMarkerClick(location)}
+                clickable={true}
+              >
+                <Pin
+                  background={
+                    selectedLocation?.id === location.id ? "#FF0000" : "#4285F4"
+                  }
+                  glyphColor="#FFFFFF"
+                  borderColor="#000000"
+                />
+              </AdvancedMarker>
             ))}
 
             {/* Info Window for active marker */}
@@ -263,7 +251,6 @@ const Map: React.FC = () => {
                           gutterBottom
                         >
                           {location.address}
-                          {location.address}
                         </Typography>
                         {location.rating && (
                           <Typography variant="body2" gutterBottom>
@@ -287,7 +274,7 @@ const Map: React.FC = () => {
               </InfoWindow>
             )}
           </GoogleMap>
-        </LoadScript>
+        </APIProvider>
       </Box>
     </Paper>
   );
