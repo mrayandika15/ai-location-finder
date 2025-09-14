@@ -247,7 +247,7 @@ class OpenWebUIService {
           role: msg.role,
           content: msg.content,
         })),
-        model,
+        model: model[0],
         session_id: sessionId,
         stream: false,
         background_tasks: {

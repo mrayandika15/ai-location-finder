@@ -103,7 +103,7 @@ export interface CompleteMessageRequest {
   chatId: string;
   assistantMessageId: string;
   sessionId: string;
-  model: string;
+  model: string[];
   messages: OpenWebUIMessage[];
 }
 

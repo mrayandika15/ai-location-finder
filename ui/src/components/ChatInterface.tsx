@@ -7,12 +7,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import useCreateNewAIMessage from "../hooks/useCreateNewAIMessage";
 import type { LocationResult, MapViewport, OpenWebUIMessage } from "../types";
 import AIMessageLoading from "./AIMessageLoading";
 import AvatarMessage from "./AvatarMessage";
 import useStreamingCompletion from "../hooks/useStreamingCompletion";
+import { useWebhook } from "../hooks/useWebhook";
+import useCompleteCompletion from "../hooks/useCompleteCompletion";
 
 interface ChatInterfaceProps {
   searchResults: LocationResult[];
@@ -21,6 +23,15 @@ interface ChatInterfaceProps {
   setSelectedLocation: (location: LocationResult | null) => void;
   mapViewport: MapViewport;
   setMapViewport: (viewport: MapViewport) => void;
+}
+
+interface ChatEvent {
+  chat_id: string;
+  message_id: string;
+  data: {
+    type: string;
+    data: any;
+  };
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = () => {
@@ -34,6 +45,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       timestamp: Date.now(),
     },
   ]);
+  const [isWebhookStreaming, setIsWebhookStreaming] = useState(false);
+  const [currentStreamingMessage, setCurrentStreamingMessage] =
+    useState<OpenWebUIMessage | null>(null);
+  const [currentChatData, setCurrentChatData] = useState<{
+    id: string;
+    sessionId: string;
+    models: string[];
+    messages: OpenWebUIMessage[];
+  } | null>(null);
+
+  const currentChatId = useRef<string | null>(null);
+
+  const { isConnected, onEvent } = useWebhook();
 
   const { mutate: streamingCompletion, isPending: isStreamingLoading } =
     useStreamingCompletion({
@@ -48,13 +72,74 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const { createNewAIMessage, isLoading: isCreateNewAIMessageLoading } =
     useCreateNewAIMessage({
       onSuccess: (data) => {
-        setMessage([...message, ...data.chat.messages]);
+        setMessage([...message, ...data.chat.messages.slice(0, -1)]);
+        currentChatId.current = data.id || "";
+
+        // Store chat data for completion
+        setCurrentChatData({
+          id: data.id || "",
+          sessionId: data.chat?.session_id || "",
+          models: data.chat?.models || [],
+          messages: data.chat?.messages || [],
+        });
+
         streamingCompletion(data);
       },
       onError: (error) => {
         console.error(error);
       },
     });
+
+  // Process webhook chat-events
+  useEffect(() => {
+    const unsubscribe = onEvent("chat-events", (eventData) => {
+      const chatEvent: ChatEvent = eventData.data;
+      console.log("Received chat event:", chatEvent);
+
+      // Only process events for the current chat
+      if (
+        currentChatId.current &&
+        chatEvent.chat_id !== currentChatId.current
+      ) {
+        return;
+      }
+
+      if (chatEvent.data.type === "chat:completion") {
+        const { data } = chatEvent.data;
+
+        if (data.content) {
+          setIsWebhookStreaming(true);
+
+          // Create/update streaming message with current content
+          const streamingMessage: OpenWebUIMessage = {
+            id: chatEvent.message_id,
+            role: "assistant",
+            content: data.content,
+            timestamp: Date.now(),
+          };
+
+          if (data.done) {
+            // Final message - add to message list and stop streaming
+            setMessage((prevMessages) => [...prevMessages, streamingMessage]);
+            setIsWebhookStreaming(false);
+            setCurrentStreamingMessage(null);
+          } else {
+            // Still streaming - show current content
+            setCurrentStreamingMessage(streamingMessage);
+          }
+        } else if (data.choices && data.choices[0]?.finish_reason === "stop") {
+          // Completion finished but no content - just stop streaming
+          setIsWebhookStreaming(false);
+          setCurrentStreamingMessage(null);
+        }
+      } else if (chatEvent.data.type === "chat:title") {
+        // Handle chat title updates if needed
+        console.log("Chat title updated:", chatEvent.data.data);
+      }
+    });
+
+    return unsubscribe;
+  }, [onEvent]);
 
   const handleSendMessage = () => {
     setPrompt("");
@@ -106,12 +191,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         }}
       >
         {message.map((message) => (
-          <AvatarMessage message={message} />
+          <AvatarMessage key={message.id} message={message} />
         ))}
 
+        {/* Show streaming message */}
+        {currentStreamingMessage && (
+          <AvatarMessage key="streaming" message={currentStreamingMessage} />
+        )}
+
         {/* AI Message Loading */}
-        {isStreamingLoading ||
-          (isCreateNewAIMessageLoading && <AIMessageLoading />)}
+        {(isStreamingLoading ||
+          isCreateNewAIMessageLoading ||
+          isWebhookStreaming) && <AIMessageLoading />}
       </Box>
 
       <Divider />
@@ -147,7 +238,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               },
             }}
             onClick={handleSendMessage}
-            disabled={prompt.length === 0}
+            disabled={prompt.length === 0 || !isConnected}
           >
             <SendIcon />
           </IconButton>
