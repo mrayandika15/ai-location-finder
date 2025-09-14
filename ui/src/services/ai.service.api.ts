@@ -18,6 +18,7 @@ import type {
   OpenWebUIHistory,
   OpenWebUIMessage,
 } from "../types/ai.types";
+import systemPrompt from "../prompt/system";
 
 class OpenWebUIService {
   private client: AxiosInstance;
@@ -170,6 +171,9 @@ class OpenWebUIService {
         messages: [userMsg],
         history: this.createChatHistory([userMsg]),
         session_id: sessionId || this.generateSessionId(),
+        params: {
+          system: systemPrompt,
+        },
       };
 
       const response: AxiosResponse<CreateChatResponse> =
@@ -216,8 +220,20 @@ class OpenWebUIService {
     request: ChatCompletionRequest
   ): Promise<AIServiceResponse<ChatCompletionResponse>> {
     try {
+      // Add system prompt to the request
+      const requestWithSystem = {
+        ...request,
+        messages: [
+          {
+            role: "system" as const,
+            content: systemPrompt,
+          },
+          ...request.messages,
+        ],
+      };
+
       const response: AxiosResponse<ChatCompletionResponse> =
-        await this.client.post("/api/v1/chat/completions", request);
+        await this.client.post("/api/v1/chat/completions", requestWithSystem);
 
       return {
         success: true,
@@ -243,10 +259,16 @@ class OpenWebUIService {
       const completionRequest: ChatCompletionRequest = {
         chat_id: chatId,
         id: assistantMessageId,
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          ...messages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        ],
         model: model[0],
         session_id: sessionId,
         stream: false,
@@ -352,6 +374,9 @@ class OpenWebUIService {
         messages: [userMsg, assistantMsg],
         history: this.createChatHistory([userMsg, assistantMsg]),
         session_id: sessionId || this.generateSessionId(),
+        params: {
+          system: systemPrompt,
+        },
       };
 
       const response: AxiosResponse<CreateChatResponse> =

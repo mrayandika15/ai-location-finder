@@ -14,7 +14,6 @@ import AIMessageLoading from "./AIMessageLoading";
 import AvatarMessage from "./AvatarMessage";
 import useStreamingCompletion from "../hooks/useStreamingCompletion";
 import { useWebhook } from "../hooks/useWebhook";
-import useCompleteCompletion from "../hooks/useCompleteCompletion";
 
 interface ChatInterfaceProps {
   searchResults: LocationResult[];
@@ -48,12 +47,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [isWebhookStreaming, setIsWebhookStreaming] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] =
     useState<OpenWebUIMessage | null>(null);
-  const [currentChatData, setCurrentChatData] = useState<{
-    id: string;
-    sessionId: string;
-    models: string[];
-    messages: OpenWebUIMessage[];
-  } | null>(null);
 
   const currentChatId = useRef<string | null>(null);
 
@@ -74,14 +67,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       onSuccess: (data) => {
         setMessage([...message, ...data.chat.messages.slice(0, -1)]);
         currentChatId.current = data.id || "";
-
-        // Store chat data for completion
-        setCurrentChatData({
-          id: data.id || "",
-          sessionId: data.chat?.session_id || "",
-          models: data.chat?.models || [],
-          messages: data.chat?.messages || [],
-        });
 
         streamingCompletion(data);
       },
