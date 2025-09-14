@@ -1,5 +1,7 @@
 // Utility functions for the AI Location Finder
 
+import type { SearchRequest } from "../types/search.types";
+
 /**
  * Format distance in meters to a human-readable string
  */
@@ -134,4 +136,47 @@ export const isCurrentlyOpen = (openingHours?: any): boolean => {
 
   // This is a simplified check - Google Places API provides more detailed opening hours
   return openingHours.open_now || false;
+};
+
+export const detectSearchIntent = (content: string): boolean => {
+  try {
+    // Check for JSON code blocks
+    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+    if (!jsonMatch) return false;
+
+    // Try to parse the JSON
+    const parsed = JSON.parse(jsonMatch[1].trim());
+
+    // Check if it's a valid search request
+    return (
+      parsed &&
+      typeof parsed === "object" &&
+      parsed.action === "search" &&
+      (typeof parsed.query === "string" || typeof parsed.location === "string")
+    );
+  } catch {
+    return false;
+  }
+};
+
+export const extractSearchRequest = (content: string): SearchRequest | null => {
+  try {
+    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+    if (!jsonMatch) return null;
+
+    const parsed = JSON.parse(jsonMatch[1].trim());
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      parsed.action === "search" &&
+      (typeof parsed.query === "string" || typeof parsed.location === "string")
+    ) {
+      return parsed as SearchRequest;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 };

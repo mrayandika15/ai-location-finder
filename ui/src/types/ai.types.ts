@@ -107,6 +107,15 @@ export interface CompleteMessageRequest {
   messages: OpenWebUIMessage[];
 }
 
+export interface ChatEvent {
+  chat_id: string;
+  message_id: string;
+  data: {
+    type: string;
+    data: any;
+  };
+}
+
 export interface CompleteMessageResponse extends OpenWebUIChatResponse {}
 
 // Get Chat Types

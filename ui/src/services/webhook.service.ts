@@ -47,10 +47,6 @@ export class WebhookService {
         return;
       }
 
-      console.log("🔌 Connecting to Webhook Socket.IO...");
-      console.log("Base URL:", this.config.baseUrl);
-      console.log("Path:", this.config.path);
-
       this.socket = io(this.config.baseUrl, {
         reconnection: this.config.reconnection,
         reconnectionDelay: this.config.reconnectionDelay,
@@ -64,18 +60,10 @@ export class WebhookService {
       });
 
       this.socket.on("connect", () => {
-        console.log("✅ Connected to Webhook Socket.IO!");
-        console.log("Socket ID:", this.socket?.id);
-        console.log("Transport:", this.socket?.io.engine.transport.name);
         resolve(this.socket!);
       });
 
-      this.socket.on("disconnect", (reason) => {
-        console.log("❌ Disconnected:", reason);
-      });
-
       this.socket.on("connect_error", (error) => {
-        console.error("❌ Connection error:", error.message);
         reject(error);
       });
 
@@ -87,16 +75,6 @@ export class WebhookService {
           data: args.length === 1 ? args[0] : args,
         };
 
-        console.log(`📡 [${timestamp}] Event: "${event}"`);
-
-        if (args.length > 0) {
-          args.forEach((arg, index) => {
-            console.log(`   Data ${index + 1}:`, JSON.stringify(arg, null, 2));
-          });
-        } else {
-          console.log("   No data");
-        }
-
         // Call global callback if set
         if (this.globalCallback) {
           this.globalCallback(eventData);
@@ -105,7 +83,7 @@ export class WebhookService {
         // Call specific event callbacks
         const callbacks = this.eventCallbacks.get(event);
         if (callbacks) {
-          callbacks.forEach(callback => callback(eventData));
+          callbacks.forEach((callback) => callback(eventData));
         }
       });
     });
@@ -113,7 +91,6 @@ export class WebhookService {
 
   disconnect(): void {
     if (this.socket) {
-      console.log("🔄 Closing webhook connection...");
       this.socket.close();
       this.socket = null;
     }
@@ -160,7 +137,6 @@ export class WebhookService {
 
   emit(event: string, data?: any): boolean {
     if (!this.socket?.connected) {
-      console.warn("Cannot emit event: Socket not connected");
       return false;
     }
 

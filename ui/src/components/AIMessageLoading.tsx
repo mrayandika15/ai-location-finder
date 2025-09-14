@@ -2,7 +2,9 @@ import React from "react";
 import { Box, Typography, Avatar, CircularProgress } from "@mui/material";
 import { SmartToy as AIIcon } from "@mui/icons-material";
 
-const AIMessageLoading: React.FC = () => {
+const AIMessageLoading: React.FC<{ isPlaceLoading: boolean }> = ({
+  isPlaceLoading,
+}) => {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
       <Avatar sx={{ width: 32, height: 32, backgroundColor: "primary.main" }}>
@@ -19,7 +21,9 @@ const AIMessageLoading: React.FC = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <CircularProgress size={16} />
           <Typography variant="body2" color="text.secondary">
-            AI is thinking...
+            {isPlaceLoading
+              ? "AI is searching for places..."
+              : "AI is thinking..."}
           </Typography>
         </Box>
       </Box>
@@ -28,7 +32,3 @@ const AIMessageLoading: React.FC = () => {
 };
 
 export default AIMessageLoading;
-
-
-
-

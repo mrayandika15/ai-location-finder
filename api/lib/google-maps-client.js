@@ -33,6 +33,18 @@ class GoogleMapsClient {
         query: searchQuery,
         language: language,
         key: this.apiKey,
+        fields: [
+          "place_id",
+          "name",
+          "formatted_address",
+          "geometry",
+          "rating",
+          "price_level",
+          "types",
+          "opening_hours",
+          "photos",
+          "business_status",
+        ],
       };
 
       // Add location and radius if available
@@ -88,6 +100,18 @@ class GoogleMapsClient {
         location: `${coordinates.lat},${coordinates.lng}`,
         radius: radius,
         language: language,
+        fields: [
+          "place_id",
+          "name",
+          "formatted_address",
+          "geometry",
+          "rating",
+          "price_level",
+          "types",
+          "opening_hours",
+          "photos",
+          "business_status",
+        ],
       };
 
       if (type) {

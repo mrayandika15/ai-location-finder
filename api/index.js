@@ -11,11 +11,32 @@ const { v1Routes } = require("./routes");
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Middleware
+// Middleware - CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL?.replace(/\/$/, ''), // Remove trailing slash
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5174',
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log(`❌ CORS blocked origin: ${origin}`);
+        console.log(`✅ Allowed origins:`, allowedOrigins);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   })
 );
 
@@ -39,9 +60,13 @@ app.get("/", (req, res) => {
     version: "1.0.0",
     api_version: "v1",
     endpoints: {
-      query: "POST /api/v1/query",
+      search: "POST /api/v1/search",
+      place_details: "GET /api/v1/place/:placeId",
+      geocode: "POST /api/v1/geocode",
       models: "GET /api/v1/models",
+      chat: "POST /api/v1/chat",
     },
+    cors_allowed_origins: allowedOrigins,
     timestamp: new Date().toISOString(),
   });
 });

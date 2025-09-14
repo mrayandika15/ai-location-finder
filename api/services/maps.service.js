@@ -14,19 +14,21 @@ class MapsService {
         category,
         radius = 2000,
         language = "id",
-        filters = {}
+        filters = {},
       } = searchRequest;
 
       // Validate required fields
       if (!query && !location && !category) {
-        throw new Error("At least one of query, location, or category is required");
+        throw new Error(
+          "At least one of query, location, or category is required"
+        );
       }
 
       // Build search parameters
       const searchParams = {
         language,
         radius,
-        filters
+        filters,
       };
 
       // Determine search method based on available data
@@ -40,14 +42,14 @@ class MapsService {
           ...searchParams,
           query: searchQuery,
           location: location,
-          type: this.mapCategoryToType(category)
+          type: this.mapCategoryToType(category),
         });
       } else if (location) {
         // Use nearby search for location-based searches
         result = await this.client.searchNearby({
           ...searchParams,
           location: location,
-          type: this.mapCategoryToType(category)
+          type: this.mapCategoryToType(category),
         });
       } else {
         throw new Error("Invalid search parameters");
@@ -55,8 +57,8 @@ class MapsService {
 
       // Apply additional filtering if needed
       if (result.success && filters.rating) {
-        result.data.places = result.data.places.filter(place =>
-          place.rating && place.rating >= filters.rating
+        result.data.places = result.data.places.filter(
+          (place) => place.rating && place.rating >= filters.rating
         );
         result.data.total_results = result.data.places.length;
       }
@@ -71,9 +73,9 @@ class MapsService {
             category,
             radius,
             language,
-            filters
-          }
-        }
+            filters,
+          },
+        },
       };
     } catch (error) {
       throw new Error(`Maps service error: ${error.message}`);
@@ -99,7 +101,7 @@ class MapsService {
 
       return {
         success: true,
-        data: result
+        data: result,
       };
     } catch (error) {
       throw new Error(`Geocoding error: ${error.message}`);
@@ -116,7 +118,10 @@ class MapsService {
     }
 
     // If we have a location and it's not already in the query, add it
-    if (location && !searchQuery.toLowerCase().includes(location.toLowerCase())) {
+    if (
+      location &&
+      !searchQuery.toLowerCase().includes(location.toLowerCase())
+    ) {
       searchQuery += ` in ${location}`;
     }
 
@@ -128,52 +133,52 @@ class MapsService {
 
     const categoryMap = {
       // Food & Drink
-      "restaurant": "restaurant",
-      "restoran": "restaurant",
-      "cafe": "cafe",
-      "kafe": "cafe",
-      "bar": "bar",
-      "food": "restaurant",
-      "makanan": "restaurant",
-      "minuman": "cafe",
+      restaurant: "restaurant",
+      restoran: "restaurant",
+      cafe: "cafe",
+      kafe: "cafe",
+      bar: "bar",
+      food: "restaurant",
+      makanan: "restaurant",
+      minuman: "cafe",
 
       // Shopping
-      "store": "store",
-      "toko": "store",
-      "shopping": "shopping_mall",
-      "mall": "shopping_mall",
-      "supermarket": "supermarket",
-      "grocery": "grocery_or_supermarket",
+      store: "store",
+      toko: "store",
+      shopping: "shopping_mall",
+      mall: "shopping_mall",
+      supermarket: "supermarket",
+      grocery: "grocery_or_supermarket",
 
       // Services
-      "atm": "atm",
-      "bank": "bank",
-      "hospital": "hospital",
-      "pharmacy": "pharmacy",
-      "gas_station": "gas_station",
-      "pom_bensin": "gas_station",
+      atm: "atm",
+      bank: "bank",
+      hospital: "hospital",
+      pharmacy: "pharmacy",
+      gas_station: "gas_station",
+      pom_bensin: "gas_station",
 
       // Entertainment
-      "movie": "movie_theater",
-      "cinema": "movie_theater",
-      "gym": "gym",
-      "spa": "spa",
+      movie: "movie_theater",
+      cinema: "movie_theater",
+      gym: "gym",
+      spa: "spa",
 
       // Technology
       "toko komputer": "electronics_store",
-      "computer": "electronics_store",
-      "electronics": "electronics_store",
+      computer: "electronics_store",
+      electronics: "electronics_store",
 
       // Transportation
-      "parking": "parking",
-      "airport": "airport",
-      "train": "train_station",
-      "bus": "bus_station",
+      parking: "parking",
+      airport: "airport",
+      train: "train_station",
+      bus: "bus_station",
 
       // Lodging
-      "hotel": "lodging",
-      "motel": "lodging",
-      "penginapan": "lodging"
+      hotel: "lodging",
+      motel: "lodging",
+      penginapan: "lodging",
     };
 
     return categoryMap[category.toLowerCase()] || null;
@@ -197,7 +202,10 @@ class MapsService {
       errors.push("At least one of query, location, or category is required");
     }
 
-    if (radius && (typeof radius !== "number" || radius < 0 || radius > 50000)) {
+    if (
+      radius &&
+      (typeof radius !== "number" || radius < 0 || radius > 50000)
+    ) {
       errors.push("Radius must be a number between 0 and 50000 meters");
     }
 
@@ -216,7 +224,7 @@ class MapsService {
     return {
       success: true,
       data: {
-        places: result.data.places.map(place => ({
+        places: result.data.places.map((place) => ({
           id: place.place_id,
           name: place.name,
           address: place.address,
@@ -225,18 +233,21 @@ class MapsService {
           price_level: place.price_level,
           categories: place.types,
           is_open: place.opening_hours?.open_now || null,
-          photos: place.photos.map(photo => ({
-            reference: photo.photo_reference,
-            width: photo.width,
-            height: photo.height,
-            url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${photo.width}&photoreference=${photo.photo_reference}&key=${process.env.GOOGLE_MAPS_API_KEY}`
-          })),
-          status: place.business_status
+          photos: place.photos
+            ? place.photos.map((photo) => ({
+                photo_reference: photo.photo_reference,
+                reference: photo.photo_reference, // Keep for backward compatibility
+                width: photo.width,
+                height: photo.height,
+                // Don't generate URL on server - let frontend handle it with its own API key
+              }))
+            : [],
+          status: place.business_status,
         })),
         total: result.data.total_results,
         search_info: result.data.search_params,
-        next_page_token: result.data.next_page_token
-      }
+        next_page_token: result.data.next_page_token,
+      },
     };
   }
 }

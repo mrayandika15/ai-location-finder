@@ -7,75 +7,50 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import useCreateNewAIMessage from "../hooks/useCreateNewAIMessage";
-import type { LocationResult, MapViewport, OpenWebUIMessage } from "../types";
-import AIMessageLoading from "./AIMessageLoading";
-import AvatarMessage from "./AvatarMessage";
+import useHandleMessage from "../hooks/useHandleMessage";
+import useSearchPlaces from "../hooks/useSearchPlaces";
 import useStreamingCompletion from "../hooks/useStreamingCompletion";
 import { useWebhook } from "../hooks/useWebhook";
+import type { ChatEvent } from "../types";
+import type { SearchRequest } from "../types/search.types";
+import { detectSearchIntent, extractSearchRequest } from "../utils";
+import AIMessageLoading from "./AIMessageLoading";
+import AvatarMessage from "./AvatarMessage";
+import PlacesList from "./PlacesList";
 
-interface ChatInterfaceProps {
-  searchResults: LocationResult[];
-  setSearchResults: (results: LocationResult[]) => void;
-  selectedLocation: LocationResult | null;
-  setSelectedLocation: (location: LocationResult | null) => void;
-  mapViewport: MapViewport;
-  setMapViewport: (viewport: MapViewport) => void;
-}
-
-interface ChatEvent {
-  chat_id: string;
-  message_id: string;
-  data: {
-    type: string;
-    data: any;
-  };
-}
-
-const ChatInterface: React.FC<ChatInterfaceProps> = () => {
-  const [prompt, setPrompt] = useState<string>("");
-  const [message, setMessage] = useState<OpenWebUIMessage[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Hello! I'm your AI location assistant. Ask me anything like 'Find coffee shops near ITB' or 'Where can I get good ramen in Bandung?'",
-      timestamp: Date.now(),
-    },
-  ]);
-  const [isWebhookStreaming, setIsWebhookStreaming] = useState(false);
-  const [currentStreamingMessage, setCurrentStreamingMessage] =
-    useState<OpenWebUIMessage | null>(null);
+const ChatInterface: React.FC = () => {
+  const { message, setMessage, prompt, setPrompt } = useHandleMessage();
 
   const currentChatId = useRef<string | null>(null);
 
-  const { isConnected, onEvent } = useWebhook();
-
+  /// handle streaming completion
   const { mutate: streamingCompletion, isPending: isStreamingLoading } =
-    useStreamingCompletion({
-      onSuccess: (data) => {
-        console.log(data);
-      },
-      onError: (error) => {
-        console.error(error);
-      },
-    });
+    useStreamingCompletion({});
 
+  /// handle create new ai message
   const { createNewAIMessage, isLoading: isCreateNewAIMessageLoading } =
     useCreateNewAIMessage({
       onSuccess: (data) => {
-        setMessage([...message, ...data.chat.messages.slice(0, -1)]);
         currentChatId.current = data.id || "";
 
         streamingCompletion(data);
       },
-      onError: (error) => {
-        console.error(error);
-      },
     });
 
-  // Process webhook chat-events
+  /// Handle Webhook Streaming
+  const { isConnected, onEvent } = useWebhook();
+  const [isWebhookStreaming, setIsWebhookStreaming] = useState(false);
+
+  /// handle search places
+  const {
+    mutate: searchPlaces,
+    data: searchPlacesData,
+    isPending: isSearchPlacesLoading,
+    isSuccess: isSearchPlacesSuccess,
+  } = useSearchPlaces();
+
   useEffect(() => {
     const unsubscribe = onEvent("chat-events", (eventData) => {
       const chatEvent: ChatEvent = eventData.data;
@@ -95,27 +70,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         if (data.content) {
           setIsWebhookStreaming(true);
 
-          // Create/update streaming message with current content
-          const streamingMessage: OpenWebUIMessage = {
-            id: chatEvent.message_id,
-            role: "assistant",
-            content: data.content,
-            timestamp: Date.now(),
-          };
-
           if (data.done) {
-            // Final message - add to message list and stop streaming
-            setMessage((prevMessages) => [...prevMessages, streamingMessage]);
             setIsWebhookStreaming(false);
-            setCurrentStreamingMessage(null);
-          } else {
-            // Still streaming - show current content
-            setCurrentStreamingMessage(streamingMessage);
+
+            const searchRequest = extractSearchRequest(data.content);
+            searchPlaces(searchRequest as SearchRequest);
           }
         } else if (data.choices && data.choices[0]?.finish_reason === "stop") {
-          // Completion finished but no content - just stop streaming
           setIsWebhookStreaming(false);
-          setCurrentStreamingMessage(null);
         }
       } else if (chatEvent.data.type === "chat:title") {
         // Handle chat title updates if needed
@@ -128,6 +90,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   const handleSendMessage = () => {
     setPrompt("");
+    setMessage([
+      ...message,
+      {
+        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        role: "user",
+        content: prompt,
+        timestamp: Date.now(),
+      },
+    ]);
     createNewAIMessage(prompt);
   };
 
@@ -179,15 +150,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           <AvatarMessage key={message.id} message={message} />
         ))}
 
-        {/* Show streaming message */}
-        {currentStreamingMessage && (
-          <AvatarMessage key="streaming" message={currentStreamingMessage} />
-        )}
-
         {/* AI Message Loading */}
         {(isStreamingLoading ||
           isCreateNewAIMessageLoading ||
-          isWebhookStreaming) && <AIMessageLoading />}
+          isWebhookStreaming) && (
+          <AIMessageLoading isPlaceLoading={isSearchPlacesLoading} />
+        )}
+
+        {isSearchPlacesSuccess && searchPlacesData?.data.places && (
+          <PlacesList
+            loading={isSearchPlacesLoading}
+            places={searchPlacesData?.data.places}
+          />
+        )}
       </Box>
 
       <Divider />
