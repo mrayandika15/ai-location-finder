@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { LocationResult, MapViewport } from "../types";
+import type { MapViewport } from "../types";
+import type { SearchPlace } from "../types/search.types";
 
 // Default viewport - Bandung, Indonesia
 const defaultViewport: MapViewport = {
@@ -12,12 +13,12 @@ const defaultViewport: MapViewport = {
 
 interface MapState {
   // Search results
-  searchResults: LocationResult[];
-  setSearchResults: (results: LocationResult[]) => void;
+  searchResults: SearchPlace[];
+  setSearchResults: (results: SearchPlace[]) => void;
 
   // Selected location
-  selectedLocation: LocationResult | null;
-  setSelectedLocation: (location: LocationResult | null) => void;
+  selectedLocation: SearchPlace | null;
+  setSelectedLocation: (location: SearchPlace | null) => void;
 
   // Loading state
   isLoading: boolean;

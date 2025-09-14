@@ -1,13 +1,13 @@
-import React, { useCallback, useRef, useState, useEffect } from "react";
-import { Box, Paper, Typography, Alert } from "@mui/material";
+import { Alert, Box, Paper, Typography } from "@mui/material";
 import {
   GoogleMap,
+  InfoWindow,
   LoadScript,
   Marker,
-  InfoWindow,
 } from "@react-google-maps/api";
-import type { LocationResult } from "../types";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMapStore } from "../store/map";
+import type { SearchPlace } from "../types/search.types";
 
 // Google Maps container style
 const mapContainerStyle = {
@@ -44,8 +44,8 @@ const Map: React.FC = () => {
 
   // Handle marker click
   const handleMarkerClick = useCallback(
-    (location: LocationResult) => {
-      setActiveMarker(location.place_id);
+    (location: SearchPlace) => {
+      setActiveMarker(location.id);
       setSelectedLocation(location);
     },
     [setSelectedLocation]
@@ -74,7 +74,7 @@ const Map: React.FC = () => {
   // Effect to set active marker when location is selected externally
   useEffect(() => {
     if (selectedLocation) {
-      setActiveMarker(selectedLocation.place_id);
+      setActiveMarker(selectedLocation.id);
     }
   }, [selectedLocation]);
 
@@ -223,12 +223,12 @@ const Map: React.FC = () => {
             {/* Render markers for search results */}
             {searchResults.map((location) => (
               <Marker
-                key={location.place_id}
-                position={location.location}
+                key={location.id}
+                position={location.coordinates}
                 onClick={() => handleMarkerClick(location)}
                 icon={{
                   url:
-                    selectedLocation?.place_id === location.place_id
+                    selectedLocation?.id === location.id
                       ? "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
                       : "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
                   scaledSize: new window.google.maps.Size(40, 40),
@@ -240,15 +240,15 @@ const Map: React.FC = () => {
             {activeMarker && (
               <InfoWindow
                 position={
-                  searchResults.find((loc) => loc.place_id === activeMarker)
-                    ?.location
+                  searchResults.find((loc) => loc.id === activeMarker)
+                    ?.coordinates
                 }
                 onCloseClick={handleInfoWindowClose}
               >
                 <div>
                   {(() => {
                     const location = searchResults.find(
-                      (loc) => loc.place_id === activeMarker
+                      (loc) => loc.id === activeMarker
                     );
                     if (!location) return null;
 
@@ -263,24 +263,23 @@ const Map: React.FC = () => {
                           gutterBottom
                         >
                           {location.address}
+                          {location.address}
                         </Typography>
                         {location.rating && (
                           <Typography variant="body2" gutterBottom>
                             ⭐ {location.rating}/5
                           </Typography>
                         )}
-                        {location.opening_hours && (
-                          <Typography variant="body2" gutterBottom>
-                            {location.opening_hours.open_now
-                              ? "🟢 Open"
-                              : "🔴 Closed"}
-                          </Typography>
-                        )}
-                        {location.types && location.types.length > 0 && (
-                          <Typography variant="caption" color="text.secondary">
-                            {location.types.slice(0, 3).join(", ")}
-                          </Typography>
-                        )}
+
+                        {location.categories &&
+                          location.categories.length > 0 && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {location.categories.slice(0, 3).join(", ")}
+                            </Typography>
+                          )}
                       </Box>
                     );
                   })()}

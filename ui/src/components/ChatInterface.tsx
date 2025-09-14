@@ -14,14 +14,16 @@ import useSearchPlaces from "../hooks/useSearchPlaces";
 import useStreamingCompletion from "../hooks/useStreamingCompletion";
 import { useWebhook } from "../hooks/useWebhook";
 import type { ChatEvent } from "../types";
-import type { SearchRequest } from "../types/search.types";
+import type { SearchPlace, SearchRequest } from "../types/search.types";
 import { extractSearchRequest } from "../utils";
 import AIMessageLoading from "./AIMessageLoading";
 import AvatarMessage from "./AvatarMessage";
 import PlacesList from "./PlacesList";
+import { useMapStore } from "../store/map";
 
 const ChatInterface: React.FC = () => {
   const { message, setMessage, prompt, setPrompt } = useHandleMessage();
+  const { setSearchResults, setSelectedLocation } = useMapStore();
 
   const currentChatId = useRef<string | null>(null);
 
@@ -49,7 +51,12 @@ const ChatInterface: React.FC = () => {
     data: searchPlacesData,
     isPending: isSearchPlacesLoading,
     isSuccess: isSearchPlacesSuccess,
-  } = useSearchPlaces();
+  } = useSearchPlaces({
+    onSuccess: (data) => {
+      setSearchResults(data.data.places || []);
+      setSelectedLocation(data.data.places[0] || null);
+    },
+  });
 
   useEffect(() => {
     const unsubscribe = onEvent("chat-events", (eventData) => {
@@ -74,6 +81,7 @@ const ChatInterface: React.FC = () => {
             setIsWebhookStreaming(false);
 
             const searchRequest = extractSearchRequest(data.content);
+
             searchPlaces(searchRequest as SearchRequest);
           }
         } else if (data.choices && data.choices[0]?.finish_reason === "stop") {
@@ -100,6 +108,10 @@ const ChatInterface: React.FC = () => {
       },
     ]);
     createNewAIMessage(prompt);
+  };
+
+  const onPlaceSelect = (place: SearchPlace) => {
+    setSelectedLocation(place);
   };
 
   return (
@@ -159,6 +171,7 @@ const ChatInterface: React.FC = () => {
 
         {isSearchPlacesSuccess && searchPlacesData?.data.places && (
           <PlacesList
+            onPlaceSelect={onPlaceSelect}
             loading={isSearchPlacesLoading}
             places={searchPlacesData?.data.places}
           />
